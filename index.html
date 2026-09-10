@@ -374,6 +374,44 @@
     transform: translateY(-1px);
   }
   .social-badge svg{ width: 15px; height: 15px; flex-shrink: 0; }
+
+  /* ---------- Toast ---------- */
+  .toast{
+    position: fixed;
+    left: 50%;
+    bottom: 28px;
+    transform: translateX(-50%) translateY(20px);
+    background: var(--ink);
+    color: #fff;
+    padding: 12px 22px;
+    border-radius: 999px;
+    font-size: 14px;
+    font-weight: 700;
+    box-shadow: 0 10px 24px rgba(0,0,0,0.25);
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity .22s ease, transform .22s ease;
+    z-index: 50;
+    max-width: 90vw;
+    text-align: center;
+  }
+  .toast.show{
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+  }
+
+  @keyframes shakeSlot{
+    0%, 100%{ transform: translateX(0); }
+    20%{ transform: translateX(-6px); }
+    40%{ transform: translateX(6px); }
+    60%{ transform: translateX(-4px); }
+    80%{ transform: translateX(4px); }
+  }
+  .slot.shake{
+    animation: shakeSlot .35s ease;
+    border-color: var(--p2-dark) !important;
+    background: var(--p2-light) !important;
+  }
 </style>
 </head>
 <body>
@@ -473,6 +511,8 @@
 
 </div>
 
+<div class="toast" id="toast"></div>
+
 <script>
 (function(){
   const state = {
@@ -501,7 +541,16 @@
     finalNum1: document.getElementById('finalNum1'),
     finalNum2: document.getElementById('finalNum2'),
     resetBtn: document.getElementById('resetBtn'),
+    toast: document.getElementById('toast'),
   };
+
+  let toastTimer = null;
+  function showToast(msg){
+    els.toast.textContent = msg;
+    els.toast.classList.add('show');
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(()=> els.toast.classList.remove('show'), 1800);
+  }
 
   function renderDecks(){
     [1,2].forEach(p=>{
@@ -541,7 +590,9 @@
         zone.appendChild(card);
         const hint = document.createElement('span');
         hint.className = 'held-hint';
-        hint.textContent = '選一個空格排進去 →';
+        hint.textContent = state.held[p] === 0
+          ? '0 不能放千位喔，選其他空格排進去 →'
+          : '選一個空格排進去 →';
         zone.appendChild(hint);
       } else {
         const hint = document.createElement('span');
@@ -566,7 +617,8 @@
         el.textContent = isEmpty ? '?' : val;
         el.classList.toggle('empty', isEmpty);
         el.classList.toggle('filled', !isEmpty);
-        const canPlace = isEmpty && state.held[p] !== null && state.turn === p;
+        const invalidZeroInThousands = place === 0 && state.held[p] === 0;
+        const canPlace = isEmpty && state.held[p] !== null && state.turn === p && !invalidZeroInThousands;
         el.classList.toggle('can-place', canPlace);
       });
       (p===1?els.progress1:els.progress2).textContent = filledCount + ' / 4';
@@ -583,10 +635,22 @@
     renderAll();
   }
 
-  function placeCard(player, place){
+  function placeCard(player, place, slotEl){
     if(state.turn !== player) return;
     if(state.held[player] === null) return;
     if(state.placed[player][place] !== null) return;
+
+    if(place === 0 && state.held[player] === 0){
+      showToast('千位不能放 0 喔，不然就不是四位數了！');
+      if(slotEl){
+        slotEl.classList.remove('shake');
+        void slotEl.offsetWidth; // restart animation if triggered again quickly
+        slotEl.classList.add('shake');
+        setTimeout(()=> slotEl.classList.remove('shake'), 400);
+      }
+      return;
+    }
+
     state.placed[player][place] = state.held[player];
     state.held[player] = null;
 
@@ -656,7 +720,7 @@
     el.addEventListener('click', ()=>{
       const player = +el.dataset.player;
       const place = +el.dataset.place;
-      placeCard(player, place);
+      placeCard(player, place, el);
     });
   });
 
