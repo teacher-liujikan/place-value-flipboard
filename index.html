@@ -3,564 +3,665 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>位值翻牌計數器</title>
+<title>抽數字卡比賽</title>
 <style>
   :root{
-    --chalk-bg-1: #1f3b32;
-    --chalk-bg-2: #16281f;
-    --wood: #8a5a37;
-    --wood-dark: #6b4327;
-    --wood-light: #a9744a;
-    --card-face: #f5efe0;
-    --card-face-shade: #e7ddc4;
-    --ink: #262218;
-    --chalk-text: #f4efe3;
-    --chalk-text-dim: #cfd8c9;
-    --amber: #e8a93b;
-    --amber-deep: #b4791f;
-    --brick: #bd5333;
-    --brick-deep: #8f3a22;
-    --rivet: #d8cba6;
+    --bg: #FBF4E4;
+    --bg-line: #E7DCC2;
+    --ink: #24303D;
+    --ink-soft: #5B6572;
+    --p1: #2F9E77;
+    --p1-dark: #1F7A5C;
+    --p1-light: #DFF3EA;
+    --p2: #FF6B81;
+    --p2-dark: #E14D67;
+    --p2-light: #FFE7EB;
+    --gold: #F4B740;
+    --gold-dark: #D99A1E;
+    --card-face: #FFFFFF;
+    --shadow: rgba(36,48,61,0.16);
   }
 
   *{ box-sizing: border-box; }
 
   html, body{
-    margin:0;
-    min-height:100%;
-    background:
-      radial-gradient(ellipse at 50% -10%, #2c4c40 0%, var(--chalk-bg-1) 45%, var(--chalk-bg-2) 100%);
-    color: var(--chalk-text);
-    font-family: -apple-system, "PingFang TC", "Microsoft JhengHei", "Noto Sans TC", "Segoe UI", sans-serif;
-    -webkit-font-smoothing: antialiased;
+    margin: 0;
+    padding: 0;
+    background: var(--bg);
+    background-image:
+      radial-gradient(circle at 8% 12%, rgba(47,158,119,0.07), transparent 40%),
+      radial-gradient(circle at 92% 85%, rgba(255,107,129,0.08), transparent 40%);
+    color: var(--ink);
+    font-family: "Segoe UI", "PingFang TC", "Microsoft JhengHei", "Heiti TC", system-ui, sans-serif;
+    min-height: 100vh;
   }
 
-  .stage{
-    max-width: 1180px;
+  .wrap{
+    max-width: 1040px;
     margin: 0 auto;
-    padding: 40px 20px 56px;
-    display:flex;
-    flex-direction:column;
-    align-items:center;
+    padding: 28px 18px 60px;
   }
 
+  /* ---------- Header ---------- */
   header{
-    text-align:center;
-    max-width: 560px;
-    margin-bottom: 30px;
+    text-align: center;
+    margin-bottom: 22px;
   }
-
   h1{
-    font-size: clamp(26px, 4vw, 34px);
+    font-size: clamp(26px, 4vw, 38px);
     font-weight: 800;
-    letter-spacing: 0.02em;
-    margin: 0 0 10px;
-    color: var(--chalk-text);
+    letter-spacing: 1px;
+    margin: 0 0 6px;
   }
-
+  h1 .num{
+    display: inline-block;
+    background: var(--gold);
+    color: #3A2A05;
+    border-radius: 10px;
+    padding: 0 10px;
+    transform: rotate(-3deg);
+    margin: 0 2px;
+  }
   .subtitle{
-    margin:0;
+    color: var(--ink-soft);
     font-size: 15px;
-    line-height:1.7;
-    color: var(--chalk-text-dim);
+    margin: 0;
   }
 
-  /* ---------- shelf ---------- */
-  .counter-shelf{
-    position: relative;
-    display:flex;
-    gap: 10px;
-    padding: 28px 20px 20px;
-    border-radius: 18px;
-    background: linear-gradient(180deg, var(--wood-light) 0%, var(--wood) 55%, var(--wood-dark) 100%);
-    box-shadow:
-      0 22px 40px rgba(0,0,0,0.35),
-      inset 0 2px 0 rgba(255,255,255,0.18),
-      inset 0 -6px 12px rgba(0,0,0,0.25);
-    flex-wrap: wrap;
+  /* ---------- Turn banner ---------- */
+  .turn-banner{
+    display: flex;
+    align-items: center;
     justify-content: center;
-  }
-
-  .column{
-    display:flex;
-    flex-direction: column;
-    align-items:center;
-    width: 96px;
-    position:relative;
-  }
-
-  .place-label{
-    font-size: 14px;
-    font-weight: 700;
-    color: var(--chalk-text);
-    background: rgba(0,0,0,0.22);
-    padding: 2px 10px;
+    gap: 10px;
+    margin: 18px auto 26px;
+    max-width: 460px;
+    padding: 10px 20px;
     border-radius: 999px;
-    margin-bottom: 12px;
-    letter-spacing: 0.02em;
-    white-space: nowrap;
+    background: var(--card-face);
+    box-shadow: 0 6px 16px var(--shadow);
+    font-weight: 700;
+    font-size: 15px;
+    transition: box-shadow .25s ease;
+  }
+  .turn-banner .dot{
+    width: 10px; height: 10px; border-radius: 50%;
+    background: var(--gold);
+  }
+  .turn-banner.p1{ box-shadow: 0 0 0 3px var(--p1) inset, 0 6px 16px var(--shadow); }
+  .turn-banner.p2{ box-shadow: 0 0 0 3px var(--p2) inset, 0 6px 16px var(--shadow); }
+  .turn-banner.done{ box-shadow: 0 0 0 3px var(--gold) inset, 0 6px 16px var(--shadow); }
+
+  /* ---------- Arena ---------- */
+  .arena{
+    display: grid;
+    grid-template-columns: 1fr auto 1fr;
+    gap: 18px;
+    align-items: start;
+  }
+  @media (max-width: 760px){
+    .arena{ grid-template-columns: 1fr; }
+    .vs-col{ order: 3; }
   }
 
-  .place-value{
-    margin-top: 8px;
-    font-size: 10.5px;
-    color: rgba(255,255,255,0.65);
-    letter-spacing: 0.02em;
+  .panel{
+    background: var(--card-face);
+    border-radius: 22px;
+    padding: 20px 18px 22px;
+    box-shadow: 0 10px 26px var(--shadow);
+    border-top: 6px solid var(--accent);
+    position: relative;
+    opacity: 0.55;
+    transition: opacity .25s ease, transform .25s ease;
+  }
+  .panel.active{
+    opacity: 1;
+    transform: translateY(-3px);
+  }
+  .panel--p1{ --accent: var(--p1); }
+  .panel--p2{ --accent: var(--p2); }
+
+  .panel-head{
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 14px;
+  }
+  .player-name{
+    font-size: 19px;
+    font-weight: 800;
+    color: var(--accent);
+  }
+  .score-num{
+    font-size: 13px;
+    color: var(--ink-soft);
+    background: color-mix(in srgb, var(--accent) 12%, white);
+    padding: 3px 10px;
+    border-radius: 999px;
+    font-weight: 700;
   }
 
-  /* ---------- flip card ---------- */
-  .card-flip{
-    width: 82px;
-    height: 112px;
-    perspective: 480px;
+  /* place value boxes */
+  .slots{
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 8px;
+    margin-bottom: 16px;
+  }
+  .slot-wrap{ text-align: center; }
+  .slot-label{
+    font-size: 12px;
+    color: var(--ink-soft);
+    margin-bottom: 5px;
+    font-weight: 700;
+  }
+  .slot{
+    aspect-ratio: 3/4;
+    border: 2.5px dashed color-mix(in srgb, var(--accent) 45%, #cbd3da);
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: clamp(22px, 5vw, 30px);
+    font-weight: 800;
+    color: var(--accent);
+    background: color-mix(in srgb, var(--accent) 6%, white);
+    cursor: default;
+    transition: all .15s ease;
     position: relative;
   }
-
-  .card-flip::before,
-  .card-flip::after{
-    content:"";
-    position:absolute;
-    top: 50%;
-    width: 9px;
-    height: 9px;
-    margin-top: -4.5px;
-    border-radius: 50%;
-    background: radial-gradient(circle at 35% 30%, var(--rivet), #8a7c53 70%);
-    box-shadow: inset 0 1px 2px rgba(0,0,0,0.4);
-    z-index: 6;
-  }
-  .card-flip::before{ left: -5px; }
-  .card-flip::after{ right: -5px; }
-
-  .card-inner{
-    position:relative;
-    width:100%;
-    height:100%;
-    transform-style: preserve-3d;
-    transition: transform 0.9s cubic-bezier(.45,.05,.35,1);
-  }
-  .card-inner.flip{
-    transform: rotateX(-180deg);
-  }
-  .card-inner.notransition{
-    transition: none !important;
-  }
-  .card-inner.shake{
-    animation: shake 0.4s;
-  }
-  @keyframes shake{
-    0%,100%{ transform: translateX(0); }
-    20%{ transform: translateX(-6px); }
-    40%{ transform: translateX(5px); }
-    60%{ transform: translateX(-4px); }
-    80%{ transform: translateX(3px); }
-  }
-
-  .card-face{
-    position:absolute;
-    inset:0;
-    backface-visibility: hidden;
-    border-radius: 11px;
-    display:flex;
-    align-items:center;
-    justify-content:center;
-    font-size: 48px;
-    font-weight: 800;
-    font-variant-numeric: tabular-nums;
-    color: var(--ink);
-    background: linear-gradient(180deg, var(--card-face) 0%, var(--card-face-shade) 100%);
-    box-shadow:
-      0 8px 18px rgba(0,0,0,0.30),
-      inset 0 1px 0 rgba(255,255,255,0.6);
-  }
-  .card-face.back{
-    transform: rotateX(180deg);
-  }
-  .card-face::after{
-    content:"";
-    position:absolute;
-    left:0; right:0; top:50%;
-    height: 3px;
-    margin-top:-1.5px;
-    background: rgba(0,0,0,0.18);
-    box-shadow: 0 1px 2px rgba(0,0,0,0.15);
-  }
-
-  /* ---------- buttons ---------- */
-  .btn-row{
-    display:flex;
-    gap: 8px;
-    margin-top: 14px;
-  }
-
-  .btn{
-    width: 40px;
-    height: 36px;
-    border-radius: 9px;
-    border: none;
-    font-size: 18px;
-    font-weight: 800;
+  .slot.empty.can-place{
     cursor: pointer;
-    color: var(--ink);
-    background: linear-gradient(180deg, #fff 0%, #e9e2cd 100%);
-    box-shadow: 0 4px 0 rgba(0,0,0,0.28), inset 0 1px 0 rgba(255,255,255,0.7);
-    transition: transform 0.08s ease, box-shadow 0.08s ease, background 0.15s ease;
+    border-style: solid;
+    background: color-mix(in srgb, var(--accent) 14%, white);
+    animation: pulseSlot 1.1s ease-in-out infinite;
   }
-  .btn:active{
-    transform: translateY(3px);
-    box-shadow: 0 1px 0 rgba(0,0,0,0.28), inset 0 1px 0 rgba(255,255,255,0.7);
+  @keyframes pulseSlot{
+    0%,100%{ box-shadow: 0 0 0 0 color-mix(in srgb, var(--accent) 35%, transparent); }
+    50%{ box-shadow: 0 0 0 7px color-mix(in srgb, var(--accent) 0%, transparent); }
   }
-  .btn.plus:hover{ background: linear-gradient(180deg, #fff 0%, #f4e2bd 100%); }
-  .btn.minus:hover{ background: linear-gradient(180deg, #fff 0%, #f2d3c6 100%); }
-  .btn:focus-visible{
-    outline: 3px solid var(--amber);
-    outline-offset: 2px;
+  .slot.filled{
+    border-style: solid;
+    background: var(--card-face);
+    box-shadow: 0 4px 10px var(--shadow);
+    animation: dropIn .28s ease;
   }
-
-  /* ---------- floating carry/borrow badge ---------- */
-  .float-badge{
-    position: fixed;
-    top:0; left:0;
-    padding: 4px 10px;
-    border-radius: 999px;
-    font-size: 13px;
-    font-weight: 800;
-    color: #fff;
-    pointer-events:none;
-    z-index: 50;
-    box-shadow: 0 6px 14px rgba(0,0,0,0.35);
-    transition: transform 0.9s cubic-bezier(.35,.05,.25,1), opacity 0.9s ease;
-    opacity: 0;
-  }
-  .float-badge.carry{ background: linear-gradient(180deg, var(--amber), var(--amber-deep)); }
-  .float-badge.borrow{ background: linear-gradient(180deg, var(--brick), var(--brick-deep)); }
-
-  /* ---------- banner ---------- */
-  .banner{
-    margin-top: 22px;
-    max-width: 560px;
-    width: 100%;
-    text-align:center;
-    padding: 12px 18px;
-    border-radius: 12px;
-    font-size: 14.5px;
-    line-height: 1.8;
-    font-weight: 600;
-    color: #2b2413;
-    transition: opacity 0.25s ease, transform 0.25s ease;
-  }
-  .banner[hidden]{ display:none; }
-  .banner.carry{
-    background: linear-gradient(180deg, #f6cf7c, var(--amber));
-    box-shadow: 0 6px 16px rgba(180,121,31,0.35);
-  }
-  .banner.borrow{
-    background: linear-gradient(180deg, #e5967d, var(--brick));
-    color: #2b1710;
-    box-shadow: 0 6px 16px rgba(143,58,34,0.35);
-  }
-  .banner.warn{
-    background: linear-gradient(180deg, #d8d2c0, #b7ae94);
-    color: #2b2413;
+  @keyframes dropIn{
+    from{ transform: scale(0.4) rotate(-8deg); opacity: 0; }
+    to{ transform: scale(1) rotate(0); opacity: 1; }
   }
 
-  /* ---------- summary ---------- */
-  .summary{
-    margin-top: 28px;
-    text-align:center;
+  /* drawn card holding area */
+  .draw-zone{
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 14px;
+    min-height: 78px;
+    margin-bottom: 14px;
+    padding: 8px;
+    border-radius: 14px;
+    background: color-mix(in srgb, var(--accent) 5%, transparent);
   }
-  .total{
-    font-size: 20px;
-    font-weight: 700;
-    color: var(--chalk-text);
-  }
-  .total span{
+  .held-card{
+    width: 58px; height: 78px;
+    border-radius: 10px;
+    background: var(--card-face);
+    border: 2px solid var(--accent);
+    display: flex;
+    align-items: center;
+    justify-content: center;
     font-size: 30px;
     font-weight: 800;
-    color: var(--amber);
-    font-variant-numeric: tabular-nums;
-    margin-left: 6px;
+    color: var(--accent);
+    box-shadow: 0 6px 14px var(--shadow);
+    animation: flipIn .3s ease;
   }
-  .expanded{
-    margin-top: 8px;
-    font-size: 15px;
-    color: var(--chalk-text-dim);
-    font-variant-numeric: tabular-nums;
+  @keyframes flipIn{
+    from{ transform: rotateY(90deg) scale(0.7); opacity:0; }
+    to{ transform: rotateY(0) scale(1); opacity:1; }
+  }
+  .held-hint{
+    font-size: 13px;
+    color: var(--ink-soft);
+    font-weight: 600;
+    max-width: 130px;
   }
 
-  .reset-btn{
-    margin-top: 26px;
-    padding: 10px 26px;
-    border-radius: 999px;
-    border: 1.5px solid rgba(244,239,227,0.5);
-    background: transparent;
-    color: var(--chalk-text);
-    font-size: 14px;
-    font-weight: 700;
+  .draw-btn{
+    display: block;
+    width: 100%;
+    padding: 12px;
+    border: none;
+    border-radius: 14px;
+    background: var(--accent);
+    color: white;
+    font-size: 16px;
+    font-weight: 800;
+    letter-spacing: 1px;
     cursor: pointer;
-    transition: background 0.15s ease, transform 0.08s ease;
+    box-shadow: 0 6px 0 color-mix(in srgb, var(--accent) 70%, black);
+    transition: transform .08s ease, box-shadow .08s ease;
   }
-  .reset-btn:hover{ background: rgba(244,239,227,0.12); }
-  .reset-btn:active{ transform: translateY(2px); }
-  .reset-btn:focus-visible{
-    outline: 3px solid var(--amber);
-    outline-offset: 2px;
+  .draw-btn:active{
+    transform: translateY(4px);
+    box-shadow: 0 2px 0 color-mix(in srgb, var(--accent) 70%, black);
   }
-
-  @media (max-width: 900px){
-    .counter-shelf{ gap: 8px; padding: 20px 12px 14px; }
-    .column{ width: 72px; }
-    .card-flip{ width: 62px; height: 84px; }
-    .card-face{ font-size: 34px; border-radius: 8px; }
-    .place-label{ font-size: 11.5px; padding: 2px 7px; }
-    .place-value{ font-size: 9px; }
-    .btn{ width: 32px; height: 30px; font-size: 15px; }
-    .total span{ font-size: 22px; }
+  .draw-btn:disabled{
+    background: #C7CDD3;
+    box-shadow: 0 6px 0 #A9B0B8;
+    cursor: not-allowed;
+    color: #F2F4F5;
   }
 
-  @media (max-width: 480px){
-    .column{ width: 64px; }
-    .card-flip{ width: 54px; height: 74px; }
-    .card-face{ font-size: 28px; }
-    .place-label{ font-size: 10px; padding: 2px 6px; }
+  /* remaining deck chips */
+  .deck{
+    display: flex;
+    flex-wrap: wrap;
+    gap: 5px;
+    justify-content: center;
+    margin-top: 14px;
+  }
+  .chip{
+    width: 24px; height: 24px;
+    border-radius: 6px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 12px;
+    font-weight: 700;
+    background: color-mix(in srgb, var(--accent) 14%, white);
+    color: var(--accent);
+  }
+  .chip.used{
+    background: #EEF0F2;
+    color: #C3C9CE;
+    text-decoration: line-through;
   }
 
-  @media (prefers-reduced-motion: reduce){
-    .card-inner{ transition: none; }
-    .float-badge{ transition: none; }
+  /* ---------- Middle VS column ---------- */
+  .vs-col{
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 14px;
+    padding-top: 46px;
   }
+  .vs-badge{
+    width: 62px; height: 62px;
+    border-radius: 50%;
+    background: var(--gold);
+    color: #3A2A05;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 800;
+    font-size: 18px;
+    box-shadow: 0 8px 18px rgba(217,154,30,0.4);
+  }
+  .reset-btn{
+    padding: 9px 18px;
+    border-radius: 999px;
+    border: 2px solid var(--ink);
+    background: transparent;
+    color: var(--ink);
+    font-weight: 700;
+    font-size: 13px;
+    cursor: pointer;
+    white-space: nowrap;
+  }
+  .reset-btn:hover{ background: var(--ink); color: white; }
+
+  /* ---------- Result banner ---------- */
+  .result{
+    max-width: 560px;
+    margin: 26px auto 0;
+    text-align: center;
+    padding: 22px 20px;
+    border-radius: 20px;
+    background: var(--card-face);
+    box-shadow: 0 14px 30px var(--shadow);
+    display: none;
+  }
+  .result.show{ display: block; animation: popIn .35s ease; }
+  @keyframes popIn{
+    from{ transform: scale(0.85); opacity: 0; }
+    to{ transform: scale(1); opacity: 1; }
+  }
+  .result-title{
+    font-size: 22px;
+    font-weight: 800;
+    margin-bottom: 10px;
+  }
+  .result-nums{
+    display: flex;
+    justify-content: center;
+    gap: 18px;
+    font-size: 15px;
+    font-weight: 700;
+    color: var(--ink-soft);
+  }
+  .result-nums b{ font-size: 22px; }
+
+  /* ---------- Footer ---------- */
+  .site-footer{
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
+    margin-top: 40px;
+    padding-top: 22px;
+    border-top: 1px dashed var(--bg-line);
+  }
+  .social-badge{
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    padding: 7px 16px;
+    border-radius: 999px;
+    border: 1.5px solid var(--bg-line);
+    background: var(--card-face);
+    color: var(--ink);
+    text-decoration: none;
+    font-size: 13px;
+    font-weight: 700;
+    letter-spacing: .2px;
+    transition: border-color .15s ease, transform .15s ease;
+  }
+  .social-badge:hover{
+    border-color: var(--gold-dark);
+    transform: translateY(-1px);
+  }
+  .social-badge svg{ width: 15px; height: 15px; flex-shrink: 0; }
 </style>
 </head>
 <body>
+<div class="wrap">
 
-<div class="stage">
   <header>
-    <h1>位值翻牌計數器</h1>
-    <p class="subtitle">按每一位下方的「＋ / −」讓數字翻牌。滿十會自動向左邊進位，不夠減會向左邊借位，從個位一路到千萬位，一次就能看懂進退位怎麼發生的。</p>
+    <h1>抽<span class="num">數字</span>卡比賽</h1>
+    <p class="subtitle">輪流抽卡、排進四位數，比比看誰排出的數字比較大！</p>
   </header>
 
-  <div class="counter-shelf" id="shelf">
-    <!-- columns injected by JS -->
+  <div class="turn-banner p1" id="turnBanner">
+    <span class="dot"></span>
+    <span id="turnText">輪到玩家一抽卡</span>
   </div>
 
-  <div class="banner" id="banner" hidden></div>
+  <div class="arena">
 
-  <div class="summary">
-    <div class="total">目前總數：<span id="totalNum">0</span></div>
-    <div class="expanded" id="expandedForm"></div>
+    <!-- Player 1 -->
+    <section class="panel panel--p1 active" id="panel1">
+      <div class="panel-head">
+        <span class="player-name">🧑 玩家一</span>
+        <span class="score-num" id="progress1">0 / 4</span>
+      </div>
+
+      <div class="slots" id="slots1">
+        <div class="slot-wrap"><div class="slot-label">千位</div><div class="slot empty" data-player="1" data-place="0">?</div></div>
+        <div class="slot-wrap"><div class="slot-label">百位</div><div class="slot empty" data-player="1" data-place="1">?</div></div>
+        <div class="slot-wrap"><div class="slot-label">十位</div><div class="slot empty" data-player="1" data-place="2">?</div></div>
+        <div class="slot-wrap"><div class="slot-label">個位</div><div class="slot empty" data-player="1" data-place="3">?</div></div>
+      </div>
+
+      <div class="draw-zone" id="drawZone1">
+        <span class="held-hint">按「抽卡片」抽出一張數字卡</span>
+      </div>
+
+      <button class="draw-btn" id="drawBtn1">🎴 抽卡片</button>
+
+      <div class="deck" id="deck1"></div>
+    </section>
+
+    <!-- Middle -->
+    <div class="vs-col">
+      <div class="vs-badge">VS</div>
+      <button class="reset-btn" id="resetBtn">🔄 重新開始</button>
+    </div>
+
+    <!-- Player 2 -->
+    <section class="panel panel--p2" id="panel2">
+      <div class="panel-head">
+        <span class="score-num" id="progress2">0 / 4</span>
+        <span class="player-name">👧 玩家二</span>
+      </div>
+
+      <div class="slots" id="slots2">
+        <div class="slot-wrap"><div class="slot-label">千位</div><div class="slot empty" data-player="2" data-place="0">?</div></div>
+        <div class="slot-wrap"><div class="slot-label">百位</div><div class="slot empty" data-player="2" data-place="1">?</div></div>
+        <div class="slot-wrap"><div class="slot-label">十位</div><div class="slot empty" data-player="2" data-place="2">?</div></div>
+        <div class="slot-wrap"><div class="slot-label">個位</div><div class="slot empty" data-player="2" data-place="3">?</div></div>
+      </div>
+
+      <div class="draw-zone" id="drawZone2">
+        <span class="held-hint">按「抽卡片」抽出一張數字卡</span>
+      </div>
+
+      <button class="draw-btn" id="drawBtn2">🎴 抽卡片</button>
+
+      <div class="deck" id="deck2"></div>
+    </section>
+
   </div>
 
-  <button class="reset-btn" id="resetBtn">重設歸零</button>
+  <div class="result" id="result">
+    <div class="result-title" id="resultTitle">🎉 結果揭曉！</div>
+    <div class="result-nums">
+      <div>玩家一<br><b id="finalNum1">----</b></div>
+      <div>玩家二<br><b id="finalNum2">----</b></div>
+    </div>
+  </div>
+
+  <footer class="site-footer">
+    <a class="social-badge" href="https://www.instagram.com/teacher_liujikan" target="_blank" rel="noopener noreferrer">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <rect x="2" y="2" width="20" height="20" rx="5"></rect>
+        <path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"></path>
+        <line x1="17.5" y1="6.5" x2="17.51" y2="6.5"></line>
+      </svg>
+      @teacher_liujikan
+    </a>
+    <a class="social-badge" href="https://www.threads.com/@teacher_liujikan" target="_blank" rel="noopener noreferrer">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M12 2a10 10 0 1 0 10 10"></path>
+        <path d="M15.5 8.5c-1-1-4.5-1.5-6 .5-1.5 2 0 4 2 4.2 2.3.2 3.7-1 3.7-2.7 0-2.5-2.5-4-5-3.3"></path>
+      </svg>
+      @teacher_liujikan
+    </a>
+  </footer>
+
 </div>
 
 <script>
 (function(){
-  const PLACES = [
-    { label: "千萬位", mult: "×10,000,000", pow: 10000000 },
-    { label: "百萬位", mult: "×1,000,000",  pow: 1000000  },
-    { label: "十萬位", mult: "×100,000",    pow: 100000   },
-    { label: "萬位",   mult: "×10,000",     pow: 10000    },
-    { label: "千位",   mult: "×1,000",      pow: 1000     },
-    { label: "百位",   mult: "×100",        pow: 100      },
-    { label: "十位",   mult: "×10",         pow: 10       },
-    { label: "個位",   mult: "×1",          pow: 1        },
-  ];
+  const state = {
+    turn: 1,                       // whose turn to draw: 1 or 2
+    held: { 1: null, 2: null },    // card currently drawn but not placed
+    remaining: { 1: [0,1,2,3,4,5,6,7,8,9], 2: [0,1,2,3,4,5,6,7,8,9] },
+    placed: { 1: [null,null,null,null], 2: [null,null,null,null] },
+    finished: false
+  };
 
-  let digits = new Array(PLACES.length).fill(0);
+  const els = {
+    turnBanner: document.getElementById('turnBanner'),
+    turnText: document.getElementById('turnText'),
+    panel1: document.getElementById('panel1'),
+    panel2: document.getElementById('panel2'),
+    drawBtn1: document.getElementById('drawBtn1'),
+    drawBtn2: document.getElementById('drawBtn2'),
+    drawZone1: document.getElementById('drawZone1'),
+    drawZone2: document.getElementById('drawZone2'),
+    deck1: document.getElementById('deck1'),
+    deck2: document.getElementById('deck2'),
+    progress1: document.getElementById('progress1'),
+    progress2: document.getElementById('progress2'),
+    result: document.getElementById('result'),
+    resultTitle: document.getElementById('resultTitle'),
+    finalNum1: document.getElementById('finalNum1'),
+    finalNum2: document.getElementById('finalNum2'),
+    resetBtn: document.getElementById('resetBtn'),
+  };
 
-  const shelf = document.getElementById("shelf");
-  const banner = document.getElementById("banner");
-  const totalNumEl = document.getElementById("totalNum");
-  const expandedEl = document.getElementById("expandedForm");
-
-  // build columns
-  const cards = []; // {inner, front, back}
-  PLACES.forEach((p, i) => {
-    const col = document.createElement("div");
-    col.className = "column";
-    col.innerHTML = `
-      <div class="place-label">${p.label}</div>
-      <div class="card-flip">
-        <div class="card-inner">
-          <div class="card-face front">0</div>
-          <div class="card-face back">0</div>
-        </div>
-      </div>
-      <div class="place-value">${p.mult}</div>
-      <div class="btn-row">
-        <button class="btn minus" aria-label="${p.label}減1" data-i="${i}" data-d="-1">−</button>
-        <button class="btn plus" aria-label="${p.label}加1" data-i="${i}" data-d="1">＋</button>
-      </div>
-    `;
-    shelf.appendChild(col);
-
-    const inner = col.querySelector(".card-inner");
-    const front = col.querySelector(".card-face.front");
-    const back  = col.querySelector(".card-face.back");
-    cards.push({ inner, front, back, colEl: col });
-
-    col.querySelectorAll(".btn").forEach(btn=>{
-      btn.addEventListener("click", () => {
-        const idx = parseInt(btn.dataset.i, 10);
-        const delta = parseInt(btn.dataset.d, 10);
-        changeDigit(idx, delta);
-      });
+  function renderDecks(){
+    [1,2].forEach(p=>{
+      const deckEl = p===1 ? els.deck1 : els.deck2;
+      deckEl.innerHTML = '';
+      for(let n=0;n<=9;n++){
+        const used = !state.remaining[p].includes(n);
+        const chip = document.createElement('div');
+        chip.className = 'chip' + (used ? ' used' : '');
+        chip.textContent = n;
+        deckEl.appendChild(chip);
+      }
     });
-  });
-
-  document.getElementById("resetBtn").addEventListener("click", () => {
-    digits = new Array(PLACES.length).fill(0);
-    cards.forEach(c => { c.front.textContent = "0"; c.back.textContent = "0"; c.inner.classList.remove("flip"); });
-    hideBanner();
-    updateSummary();
-  });
-
-  function totalValue(){
-    return digits.reduce((sum, d, i) => sum + d * PLACES[i].pow, 0);
   }
 
-  function updateSummary(){
-    const total = totalValue();
-    totalNumEl.textContent = total.toLocaleString("en-US");
-    const parts = [];
-    digits.forEach((d, i) => {
-      if (d > 0) parts.push(d * PLACES[i].pow);
-    });
-    if (parts.length === 0) parts.push(0);
-    expandedEl.textContent = parts.length > 1
-      ? `展開式：${parts.map(p => p.toLocaleString("en-US")).join(" + ")} = ${total.toLocaleString("en-US")}`
-      : `展開式：${total.toLocaleString("en-US")}`;
+  function renderTurn(){
+    if(state.finished) return;
+    els.turnBanner.className = 'turn-banner p' + state.turn;
+    els.turnText.textContent = '輪到玩家' + (state.turn===1?'一':'二') + (state.held[state.turn] !== null ? '把卡片排進格子':'抽卡');
+    els.panel1.classList.toggle('active', state.turn===1);
+    els.panel2.classList.toggle('active', state.turn===2);
   }
 
-  function flipCard(i, newValue, delay){
-    setTimeout(() => {
-      const c = cards[i];
-      c.back.textContent = String(newValue);
-      c.inner.classList.add("flip");
-      setTimeout(() => {
-        c.inner.classList.add("notransition");
-        c.inner.classList.remove("flip");
-        c.front.textContent = String(newValue);
-        void c.inner.offsetHeight; // force reflow so the reset applies instantly
-        c.inner.classList.remove("notransition");
-      }, 900);
-    }, delay);
+  function renderButtons(){
+    els.drawBtn1.disabled = state.finished || state.turn !== 1 || state.held[1] !== null || state.remaining[1].length===0;
+    els.drawBtn2.disabled = state.finished || state.turn !== 2 || state.held[2] !== null || state.remaining[2].length===0;
   }
 
-  function shakeCard(i){
-    const c = cards[i];
-    c.inner.classList.add("shake");
-    setTimeout(()=> c.inner.classList.remove("shake"), 420);
-  }
-
-  function showBanner(text, type){
-    banner.textContent = text;
-    banner.className = "banner " + type;
-    banner.hidden = false;
-  }
-  function hideBanner(){
-    banner.hidden = true;
-  }
-
-  function spawnFloatBadge(fromIdx, toIdx, type, delay){
-    setTimeout(() => {
-      const fromRect = cards[fromIdx].colEl.getBoundingClientRect();
-      const toRect = cards[toIdx].colEl.getBoundingClientRect();
-      const badge = document.createElement("div");
-      badge.className = "float-badge " + type;
-      badge.textContent = type === "carry" ? "+1" : "−1";
-      document.body.appendChild(badge);
-
-      const startX = fromRect.left + fromRect.width/2 - 18;
-      const startY = fromRect.top + 6;
-      badge.style.transform = `translate(${startX}px, ${startY}px)`;
-      badge.style.opacity = "0";
-
-      requestAnimationFrame(() => {
-        badge.style.opacity = "1";
-        requestAnimationFrame(() => {
-          const endX = toRect.left + toRect.width/2 - 18;
-          const endY = toRect.top + 6;
-          badge.style.transform = `translate(${endX}px, ${endY}px)`;
-        });
-      });
-
-      setTimeout(() => {
-        badge.style.opacity = "0";
-        setTimeout(()=> badge.remove(), 400);
-      }, 800);
-    }, delay);
-  }
-
-  function changeDigit(startIdx, delta){
-    const temp = digits.slice();
-    const chain = [];
-    let i = startIdx;
-    let blocked = false;
-
-    while(true){
-      const nd = temp[i] + delta;
-      if (nd > 9){
-        if (i === 0){ blocked = true; break; }
-        temp[i] = 0;
-        chain.push(i);
-        i -= 1;
-        continue;
-      } else if (nd < 0){
-        if (i === 0){ blocked = true; break; }
-        temp[i] = 9;
-        chain.push(i);
-        i -= 1;
-        continue;
+  function renderHeld(){
+    [1,2].forEach(p=>{
+      const zone = p===1 ? els.drawZone1 : els.drawZone2;
+      zone.innerHTML = '';
+      if(state.held[p] !== null){
+        const card = document.createElement('div');
+        card.className = 'held-card';
+        card.textContent = state.held[p];
+        zone.appendChild(card);
+        const hint = document.createElement('span');
+        hint.className = 'held-hint';
+        hint.textContent = '選一個空格排進去 →';
+        zone.appendChild(hint);
       } else {
-        temp[i] = nd;
-        chain.push(i);
-        break;
+        const hint = document.createElement('span');
+        hint.className = 'held-hint';
+        hint.textContent = state.remaining[p].length===0 && state.placed[p].every(v=>v!==null)
+          ? '排列完成！'
+          : '按「抽卡片」抽出一張數字卡';
+        zone.appendChild(hint);
       }
-    }
-
-    if (blocked){
-      shakeCard(startIdx);
-      showBanner(
-        delta > 0 ? `已經是最大值 ${totalValue().toLocaleString("en-US")}，沒辦法再往上進位囉！` : "已經是 0，沒辦法再往下借位囉！",
-        "warn"
-      );
-      return;
-    }
-
-    digits = temp;
-
-    // animate flips in sequence, each ~260ms apart, cascading
-    const STEP = 550;
-    chain.forEach((colIdx, order) => {
-      flipCard(colIdx, digits[colIdx], order * STEP);
     });
-
-    // banner + floating badges for carry/borrow steps
-    if (chain.length > 1){
-      const type = delta > 0 ? "carry" : "borrow";
-      const lines = [];
-      for (let k = 0; k < chain.length - 1; k++){
-        const src = chain[k];
-        const dst = chain[k+1];
-        spawnFloatBadge(src, dst, type, k * STEP + 200);
-        if (delta > 0){
-          lines.push(`${PLACES[src].label}滿10，向${PLACES[dst].label}進1`);
-        } else {
-          lines.push(`${PLACES[src].label}不夠減，向${PLACES[dst].label}借1，變成10`);
-        }
-      }
-      showBanner(lines.join("；") + "！", type);
-    } else {
-      hideBanner();
-    }
-
-    setTimeout(updateSummary, chain.length * STEP + 200);
   }
 
-  updateSummary();
+  function renderSlots(){
+    [1,2].forEach(p=>{
+      const slotEls = document.querySelectorAll('.slot[data-player="'+p+'"]');
+      let filledCount = 0;
+      slotEls.forEach(el=>{
+        const place = +el.dataset.place;
+        const val = state.placed[p][place];
+        const isEmpty = val === null;
+        if(!isEmpty) filledCount++;
+        el.textContent = isEmpty ? '?' : val;
+        el.classList.toggle('empty', isEmpty);
+        el.classList.toggle('filled', !isEmpty);
+        const canPlace = isEmpty && state.held[p] !== null && state.turn === p;
+        el.classList.toggle('can-place', canPlace);
+      });
+      (p===1?els.progress1:els.progress2).textContent = filledCount + ' / 4';
+    });
+  }
+
+  function drawCard(player){
+    if(state.held[player] !== null) return;
+    const pool = state.remaining[player];
+    if(pool.length===0) return;
+    const idx = Math.floor(Math.random()*pool.length);
+    const value = pool.splice(idx,1)[0];
+    state.held[player] = value;
+    renderAll();
+  }
+
+  function placeCard(player, place){
+    if(state.turn !== player) return;
+    if(state.held[player] === null) return;
+    if(state.placed[player][place] !== null) return;
+    state.placed[player][place] = state.held[player];
+    state.held[player] = null;
+
+    // switch turn to the other player, unless that player's board is already full
+    const other = player === 1 ? 2 : 1;
+    const otherFull = state.placed[other].every(v => v !== null);
+    const selfFull = state.placed[player].every(v => v !== null);
+
+    if(otherFull && selfFull){
+      state.finished = true;
+    } else if(otherFull){
+      // other player already done, keep drawing on this player until also full
+      state.turn = player;
+    } else {
+      state.turn = other;
+    }
+
+    // always render first, so the last card visibly drops into its slot...
+    renderAll();
+
+    // ...then reveal the result a beat later, once the drop-in animation has played
+    if(state.finished){
+      setTimeout(showResult, 450);
+    }
+  }
+
+  function showResult(){
+    const n1 = state.placed[1].join('');
+    const n2 = state.placed[2].join('');
+    els.finalNum1.textContent = n1;
+    els.finalNum2.textContent = n2;
+    let title;
+    if(+n1 > +n2) title = '🎉 玩家一贏了！';
+    else if(+n2 > +n1) title = '🎉 玩家二贏了！';
+    else title = '🤝 平手！';
+    els.resultTitle.textContent = title;
+    els.result.classList.add('show');
+    els.turnText.textContent = '比賽結束';
+    els.turnBanner.className = 'turn-banner done';
+    els.panel1.classList.add('active');
+    els.panel2.classList.add('active');
+  }
+
+  function resetGame(){
+    state.turn = 1;
+    state.held = {1:null, 2:null};
+    state.remaining = {1:[0,1,2,3,4,5,6,7,8,9], 2:[0,1,2,3,4,5,6,7,8,9]};
+    state.placed = {1:[null,null,null,null], 2:[null,null,null,null]};
+    state.finished = false;
+    els.result.classList.remove('show');
+    renderAll();
+  }
+
+  function renderAll(){
+    renderDecks();
+    renderTurn();
+    renderButtons();
+    renderHeld();
+    renderSlots();
+  }
+
+  els.drawBtn1.addEventListener('click', ()=>drawCard(1));
+  els.drawBtn2.addEventListener('click', ()=>drawCard(2));
+  els.resetBtn.addEventListener('click', resetGame);
+
+  document.querySelectorAll('.slot').forEach(el=>{
+    el.addEventListener('click', ()=>{
+      const player = +el.dataset.player;
+      const place = +el.dataset.place;
+      placeCard(player, place);
+    });
+  });
+
+  renderAll();
 })();
 </script>
-
 </body>
 </html>
