@@ -216,6 +216,19 @@
     color: var(--accent);
     box-shadow: 0 6px 14px var(--shadow);
     animation: flipIn .3s ease;
+    position: relative;
+  }
+  .held-card.void{
+    opacity: 0.45;
+    border-color: #C7CDD3;
+    color: #9AA2AA;
+  }
+  .held-card.void::after{
+    content: "";
+    position: absolute;
+    left: 6px; right: 6px; top: 50%;
+    border-top: 3px solid #E14D67;
+    transform: rotate(-18deg);
   }
   @keyframes flipIn{
     from{ transform: rotateY(90deg) scale(0.7); opacity:0; }
@@ -342,6 +355,13 @@
     color: var(--ink-soft);
   }
   .result-nums b{ font-size: 22px; }
+  .result-note{
+    display: inline-block;
+    margin-top: 2px;
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--gold-dark);
+  }
 
   /* ---------- Footer ---------- */
   .site-footer{
@@ -486,8 +506,8 @@
   <div class="result" id="result">
     <div class="result-title" id="resultTitle">🎉 結果揭曉！</div>
     <div class="result-nums">
-      <div>玩家一<br><b id="finalNum1">----</b></div>
-      <div>玩家二<br><b id="finalNum2">----</b></div>
+      <div>玩家一<br><b id="finalNum1">----</b><br><span class="result-note" id="resultNote1"></span></div>
+      <div>玩家二<br><b id="finalNum2">----</b><br><span class="result-note" id="resultNote2"></span></div>
     </div>
   </div>
 
@@ -540,6 +560,8 @@
     resultTitle: document.getElementById('resultTitle'),
     finalNum1: document.getElementById('finalNum1'),
     finalNum2: document.getElementById('finalNum2'),
+    resultNote1: document.getElementById('resultNote1'),
+    resultNote2: document.getElementById('resultNote2'),
     resetBtn: document.getElementById('resetBtn'),
     toast: document.getElementById('toast'),
   };
@@ -590,8 +612,8 @@
         zone.appendChild(card);
         const hint = document.createElement('span');
         hint.className = 'held-hint';
-        hint.textContent = state.held[p] === 0
-          ? '0 不能放千位喔，選其他空格排進去 →'
+        hint.textContent = (state.held[p] === 0 && state.placed[p][0] === null)
+          ? '選一個空格排進去（放千位的話會變成三位數喔）→'
           : '選一個空格排進去 →';
         zone.appendChild(hint);
       } else {
@@ -617,8 +639,7 @@
         el.textContent = isEmpty ? '?' : val;
         el.classList.toggle('empty', isEmpty);
         el.classList.toggle('filled', !isEmpty);
-        const invalidZeroInThousands = place === 0 && state.held[p] === 0;
-        const canPlace = isEmpty && state.held[p] !== null && state.turn === p && !invalidZeroInThousands;
+        const canPlace = isEmpty && state.held[p] !== null && state.turn === p;
         el.classList.toggle('can-place', canPlace);
       });
       (p===1?els.progress1:els.progress2).textContent = filledCount + ' / 4';
@@ -640,19 +661,14 @@
     if(state.held[player] === null) return;
     if(state.placed[player][place] !== null) return;
 
-    if(place === 0 && state.held[player] === 0){
-      showToast('千位不能放 0 喔，不然就不是四位數了！');
-      if(slotEl){
-        slotEl.classList.remove('shake');
-        void slotEl.offsetWidth; // restart animation if triggered again quickly
-        slotEl.classList.add('shake');
-        setTimeout(()=> slotEl.classList.remove('shake'), 400);
-      }
-      return;
-    }
+    const placingZeroInThousands = place === 0 && state.held[player] === 0;
 
     state.placed[player][place] = state.held[player];
     state.held[player] = null;
+
+    if(placingZeroInThousands){
+      showToast('千位放 0，這樣就變成三位數囉！');
+    }
 
     // switch turn to the other player, unless that player's board is already full
     const other = player === 1 ? 2 : 1;
@@ -682,6 +698,8 @@
     const n2 = state.placed[2].join('');
     els.finalNum1.textContent = n1;
     els.finalNum2.textContent = n2;
+    els.resultNote1.textContent = state.placed[1][0] === 0 ? '千位是 0，其實是三位數 ' + (+n1) : '';
+    els.resultNote2.textContent = state.placed[2][0] === 0 ? '千位是 0，其實是三位數 ' + (+n2) : '';
     let title;
     if(+n1 > +n2) title = '🎉 玩家一贏了！';
     else if(+n2 > +n1) title = '🎉 玩家二贏了！';
