@@ -68,6 +68,139 @@
     margin: 0;
   }
 
+  /* ---------- Lottery / seat-number pairing panel ---------- */
+  .lottery-panel{
+    background: var(--card-face);
+    border-radius: 20px;
+    padding: 18px 20px 22px;
+    box-shadow: 0 10px 26px var(--shadow);
+    border-top: 6px solid var(--gold);
+    margin-bottom: 26px;
+  }
+  .lottery-head{
+    text-align: center;
+    margin-bottom: 14px;
+  }
+  .lottery-title{
+    font-size: 18px;
+    font-weight: 800;
+    color: var(--ink);
+    display: block;
+  }
+  .lottery-sub{
+    font-size: 12.5px;
+    color: var(--ink-soft);
+    font-weight: 600;
+  }
+  .lottery-controls{
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    flex-wrap: wrap;
+    margin-bottom: 16px;
+  }
+  .lottery-controls label{
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--ink-soft);
+  }
+  .lottery-controls input[type="number"]{
+    width: 80px;
+    padding: 9px 10px;
+    border-radius: 10px;
+    border: 2px solid var(--bg-line);
+    font-size: 15px;
+    font-weight: 700;
+    text-align: center;
+    color: var(--ink);
+    background: var(--bg);
+  }
+  .lottery-controls input[type="number"]:focus{
+    outline: none;
+    border-color: var(--gold-dark);
+  }
+  .lottery-btn{
+    padding: 10px 20px;
+    border: none;
+    border-radius: 12px;
+    background: var(--gold);
+    color: #3A2A05;
+    font-size: 14px;
+    font-weight: 800;
+    cursor: pointer;
+    box-shadow: 0 5px 0 var(--gold-dark);
+    transition: transform .08s ease, box-shadow .08s ease;
+    white-space: nowrap;
+  }
+  .lottery-btn:active{
+    transform: translateY(4px);
+    box-shadow: 0 1px 0 var(--gold-dark);
+  }
+
+  .lottery-result{
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 10px;
+  }
+  .match-card{
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 14px;
+    border-radius: 14px;
+    background: color-mix(in srgb, var(--gold) 10%, white);
+    border: 1.5px solid color-mix(in srgb, var(--gold) 35%, var(--bg-line));
+    font-weight: 700;
+    font-size: 14px;
+  }
+  .match-card .match-idx{
+    font-size: 11px;
+    font-weight: 800;
+    color: var(--gold-dark);
+    background: color-mix(in srgb, var(--gold) 25%, white);
+    border-radius: 999px;
+    padding: 2px 8px;
+    margin-right: 2px;
+  }
+  .match-card .seat{
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 30px;
+    padding: 3px 8px;
+    border-radius: 8px;
+    color: white;
+  }
+  .match-card .seat.p1{ background: var(--p1); }
+  .match-card .seat.p2{ background: var(--p2); }
+  .match-card .vs-mini{
+    font-size: 11px;
+    font-weight: 800;
+    color: var(--ink-soft);
+  }
+  .dup-tag{
+    display: inline-block;
+    font-size: 10px;
+    font-weight: 800;
+    margin-left: 2px;
+  }
+  .lottery-note{
+    width: 100%;
+    text-align: center;
+    font-size: 12.5px;
+    font-weight: 700;
+    color: var(--gold-dark);
+    margin-top: 4px;
+  }
+  .lottery-empty{
+    color: var(--ink-soft);
+    font-size: 13px;
+    text-align: center;
+    padding: 6px 0;
+  }
+
   /* ---------- Turn banner ---------- */
   .turn-banner{
     display: flex;
@@ -442,6 +575,19 @@
     <p class="subtitle">輪流抽卡、排進四位數，比比看誰排出的數字比較大！</p>
   </header>
 
+  <section class="lottery-panel">
+    <div class="lottery-head">
+      <span class="lottery-title">🎲 座號抽籤分組</span>
+      <span class="lottery-sub">輸入班級人數，自動兩兩配對對戰</span>
+    </div>
+    <div class="lottery-controls">
+      <label for="classSize">班級人數</label>
+      <input type="number" id="classSize" min="2" max="60" value="30" inputmode="numeric">
+      <button class="lottery-btn" id="lotteryBtn">🎲 抽籤分組！</button>
+    </div>
+    <div class="lottery-result" id="lotteryResult"></div>
+  </section>
+
   <div class="turn-banner p1" id="turnBanner">
     <span class="dot"></span>
     <span id="turnText">輪到玩家一抽卡</span>
@@ -743,6 +889,88 @@
   });
 
   renderAll();
+
+  /* ---------- Seat-number lottery / pairing ---------- */
+  const classSizeInput = document.getElementById('classSize');
+  const lotteryBtn = document.getElementById('lotteryBtn');
+  const lotteryResult = document.getElementById('lotteryResult');
+
+  function shuffled(arr){
+    const a = arr.slice();
+    for(let i = a.length - 1; i > 0; i--){
+      const j = Math.floor(Math.random() * (i + 1));
+      [a[i], a[j]] = [a[j], a[i]];
+    }
+    return a;
+  }
+
+  function runLottery(){
+    const size = parseInt(classSizeInput.value, 10);
+    lotteryResult.innerHTML = '';
+
+    if(!size || size < 2){
+      lotteryResult.innerHTML = '<div class="lottery-empty">請輸入至少 2 位學生的班級人數喔！</div>';
+      return;
+    }
+
+    const baseSeats = Array.from({length: size}, (_, i) => i + 1);
+    let dupSeat = null;
+    let pool = baseSeats.slice();
+
+    if(size % 2 !== 0){
+      // odd number: pick one random student to play twice instead of leaving someone out
+      dupSeat = baseSeats[Math.floor(Math.random() * baseSeats.length)];
+      pool.push(dupSeat);
+    }
+
+    // shuffle, retrying if the duplicated student would end up "facing themselves"
+    let seats;
+    let attempts = 0;
+    do{
+      seats = shuffled(pool);
+      attempts++;
+    } while(
+      dupSeat !== null &&
+      seats.some((v, i) => i % 2 === 0 && v === seats[i + 1]) &&
+      attempts < 50
+    );
+
+    let dupSeenCount = 0;
+    seats.forEach((seatA, i) => {
+      if(i % 2 !== 0) return;
+      const seatB = seats[i + 1];
+      const groupNum = Math.floor(i / 2) + 1;
+      const card = document.createElement('div');
+      card.className = 'match-card';
+
+      const tagFor = (seatNum) => {
+        if(dupSeat !== null && seatNum === dupSeat){
+          dupSeenCount++;
+          return ' <span class="dup-tag" title="這位同學人數單數，需要比賽兩場">🔁' + dupSeenCount + '</span>';
+        }
+        return '';
+      };
+
+      card.innerHTML =
+        '<span class="match-idx">第' + groupNum + '組</span>' +
+        '<span class="seat p1">' + seatA + ' 號' + tagFor(seatA) + '</span>' +
+        '<span class="vs-mini">VS</span>' +
+        '<span class="seat p2">' + seatB + ' 號' + tagFor(seatB) + '</span>';
+      lotteryResult.appendChild(card);
+    });
+
+    if(dupSeat !== null){
+      const note = document.createElement('div');
+      note.className = 'lottery-note';
+      note.textContent = '👀 人數是單數，' + dupSeat + ' 號同學會比賽兩場（標示 🔁1 和 🔁2）';
+      lotteryResult.appendChild(note);
+    }
+  }
+
+  lotteryBtn.addEventListener('click', runLottery);
+  classSizeInput.addEventListener('keydown', (e) => {
+    if(e.key === 'Enter') runLottery();
+  });
 })();
 </script>
 </body>
